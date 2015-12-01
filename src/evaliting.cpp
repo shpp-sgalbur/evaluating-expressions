@@ -12,11 +12,12 @@ using namespace std;
 
 
 
-/*
- * извлекаем 2 операнда из стека
- * извлекаем оператор из стека
- * выполняем операцию соответственно оператору
- * результат операции помещаем в стек операндов
+/**
+ * This function performs a simple operation
+ * - remove the 2 operand from the stack operandStack
+ * - extract the operator from the stack operatorStack
+ * - execute operations respectively to the operator from the stack operatorStack
+ * - the operation result stored in the  stack operandStack
  */
 void simpeOperation(Stack <double> & operandStack,Stack <char> & operatorStack){
     double result;
@@ -37,9 +38,9 @@ void simpeOperation(Stack <double> & operandStack,Stack <char> & operatorStack){
 }
 
 /**
- * This function определяет приоритет выполнения
- переданного в нее оператора.
- Здесь чем выше приоритет исследуемого оператора тем больше возвращаемое значение. Если символ переданный в качестве параметра не является математическим оператором функция вернет -1
+ * This function defines the execution priority of the operator transferred to it .
+ * Here than the higher the priority of the operator than the greater the return value.
+ * If the character passed as parameter is not a mathematical operator function will return -1
  * -----------------------------------------------------
  * @brief priorityOperator
  * @param ch
@@ -54,8 +55,16 @@ int priorityOperator(char ch){
     return 4;
 }
 
+/**
+ * This function performs a simple sequence of operators which priority is not below the current statement
+ * -------------------------
+ * @brief executeSmallerOper
+ * @param operatorStack
+ * @param operandStack
+ * @param priority
+ */
 void executeSmallerOper(Stack <char> & operatorStack, Stack <double> & operandStack, int priority){
-    //Если стек операторов пустой выйти из подпрограммы
+
     if (operatorStack.isEmpty()) return;
 
     if (priorityOperator(operatorStack.peek()) < priority) return;
@@ -85,58 +94,59 @@ void getFunction(string f, double & operand){
         if (f == "ln") operand = log(operand);else
         if (f == "sqrt") operand = sqrt(operand);
         else
-        cout << "Funcrion "<< f << " incorrect." << endl;
-
-
-
-
-
-
-
+        cout << "Funcrion " << f << " incorrect." << endl;
 
 }
 
-
+/**
+ * @brief evaluating
+ * @param scanner
+ * @param operandStack
+ * @param operatorStack
+ * @return
+ */
 double evaluating(TokenScanner & scanner, Stack <double> & operandStack,Stack <char> & operatorStack ){
 
 
-
-     //для каждого токена
+     //for each token
      while(scanner.hasMoreTokens()){
 
-         //Определяем его значение и тип
+         //Determine by its value and type
          string carrentToken = scanner.nextToken();
          TokenType carrentTokenType = scanner.getTokenType(carrentToken);
-         cout << carrentToken << " " << carrentTokenType << endl;//+++del
 
+         //if the current token is number add it to the stack of operands
          if (carrentTokenType == TokenType::NUMBER){
-
              operandStack.push(atof(carrentToken.c_str()));
          }
 
-         //если это оператор принадлежащий классу  TokenScanner
+         //if the operator is belong to the class TokenScanner
          if (carrentTokenType == TokenType::OPERATOR){
+
+             //determined by its priority
              char carrentOperator =  carrentToken[0];
              int priority = priorityOperator ( carrentOperator);
 
-             //Если это допустимый в простейшем арифметическом выражении оператор "+-/*"
+             //If it is valid  simplest  the arithmetic operator "+-/*"
+             //------------------------------------------------------
              if (priority >= 0){
 
-                 //если стек операторов не пустой
-                 if (!operatorStack.isEmpty()){
 
+                 if (!operatorStack.isEmpty()){
+                     //solve the problem of expressions like 2^2^2
                      if(carrentOperator == '^'){
                          if(operatorStack.peek() == '^'){
                              priority++;
                          }
                      }
 
-                     /*Выполнить простую последовательность операторов,
-                     приоритет которых ниже текущего оператора*/
+                     /*perform a simple sequence of statements
+                      * the priority which is lower than the current operator
+                      */
                      executeSmallerOper(operatorStack, operandStack, priority);
 
                  }
-                 //если стек операндов пустой (отслеживаем + или - в начале выражения)
+                 //if the operand stack is empty (tracking + or - in the begin of expression)
                  if(operandStack.isEmpty()){
                      if(carrentOperator == '+') continue;
                      if(carrentOperator == '-') operandStack.push(0);
@@ -147,10 +157,15 @@ double evaluating(TokenScanner & scanner, Stack <double> & operandStack,Stack <c
                  operatorStack.push(carrentToken[0]);
              }
              else{
+                 //If this is opening bracket
+                 //------------------------
                  if(carrentOperator == '('){
+
+                     //create new stacks for the expressions in parentheses
                      Stack <double> nOperandStack;
                      Stack <char> nOperatorStack;
-                     //operatorStack.push(carrentOperator);
+
+                     //Initiate the evaluation of an expression in parentheses
                      double result = evaluating(scanner, nOperandStack, nOperatorStack );
                      operandStack.push(result);
                  }
@@ -158,54 +173,56 @@ double evaluating(TokenScanner & scanner, Stack <double> & operandStack,Stack <c
                      if (!operatorStack.isEmpty()){
                          break;
                      }
-                     /*if(operatorStack.peek()=='('){
-                         operatorStack.pop();
 
-                     }else{
-                         cout << "Error" << endl;
-                     }*/
-                     break;
                  }
              }
 
 
 
          }
-         /*выполнение функции*/
+         //If this is funtion
+         //------------------
          if (carrentTokenType == TokenType::WORD){
+
              string currentFunction = carrentToken;
+
+             //create new stacks for the calculation of the parameter of the function
              Stack <double> nOperandStack;
              Stack <char> nOperatorStack;
-             //operatorStack.push(carrentOperator);
+
+             // calculate parameter function recursively
              double result = evaluating(scanner, nOperandStack, nOperatorStack );
+
+             //calculate function with the found parameter
              getFunction(currentFunction, result);
              operandStack.push(result);
-             cout << "Function"<<endl;
+
          }
      }
-     /*
-      * заведомо наибольший приоритет.
-      * Любой возможный оператор имеет приоритет меньше,
-      * чем BIGGER_PRIORITY
-      */
-     int BIGGER_PRIORITY = 100;
+     //if the stack of operators has an operator, do the remaining sequence of statements of the stack
      if (!operatorStack.isEmpty())
-     executeSmallerOper(operatorStack, operandStack, -1); // функция будет выполняться пока не израсходует все операторы оставшиеся в стеке
+     executeSmallerOper(operatorStack, operandStack, -1); // the function will run until it will use up all the remaining operators in the stack
 
      double result = operandStack.pop();
-     cout << "result " << result << endl;
-     //cout << operatorStack.pop() << endl;
+     //cout << "result " << result << endl;
      return result;
 
 }
 
+/**
+ * this function checks the pairing of parentheses
+ * -----------------------------------------------
+ * @brief errBrackets
+ * @param expression
+ * @return
+ */
 bool errBrackets(string expression){
     int counterbrackets = 0;
     for ( string::iterator symbol=expression.begin(); symbol!=expression.end(); ++symbol){
 
         if(*symbol == '(') counterbrackets++;
         if(*symbol == ')') counterbrackets--;
-        if (counterbrackets < 0) break;//первая ), а не (
+        if (counterbrackets < 0) break;//first ), and not (
     }
     cout << "counterbrackets = " << counterbrackets <<endl;
     return counterbrackets;
@@ -218,7 +235,6 @@ int main() {
     Stack <char>  parenthesis_Stack;
 
     string line = getLine("> ");
-    cout << line << endl;
 
     if(errBrackets(line)){
         cout << "errBrackets" << endl;
@@ -226,7 +242,8 @@ int main() {
     }
     TokenScanner expression(line);
     expression.scanNumbers();
-    evaluating(expression, operand_Stack, operator_Stack );
+    double result = evaluating(expression, operand_Stack, operator_Stack );
+    cout << "result : " << result << endl;
 
 
 
